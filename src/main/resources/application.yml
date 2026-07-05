@@ -23,7 +23,11 @@ spring:
           max-idle: 20
           min-idle: 5
           max-wait: 1000ms
+  lifecycle:
+    timeout-per-shutdown-phase: 30s
 
+server:
+  shutdown: graceful
 
 management:
   endpoints:
@@ -39,5 +43,4 @@ logging:
     root: INFO
     org.hibernate.SQL: DEBUG
   pattern:
-    # This pattern adds the [correlationId] to every log line
     console: "%d{yyyy-MM-dd HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
