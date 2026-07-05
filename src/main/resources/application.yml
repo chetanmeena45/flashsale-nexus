@@ -12,8 +12,20 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
 
-# Add this to keep the console clean and readable
+# Add these sections to enable Monitoring and Traceability
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
+
 logging:
   level:
     root: INFO
     org.hibernate.SQL: DEBUG
+  pattern:
+    # This pattern adds the [correlationId] to every log line
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%X{correlationId}] %-5level %logger{36} - %msg%n"
