@@ -1,7 +1,7 @@
 package com.flashsale.nexus.service;
 
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Service;
 import java.util.Collections;
@@ -10,9 +10,10 @@ import java.util.Collections;
 @Service
 public class StockService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    // Switched to StringRedisTemplate for better performance with connection pooling
+    private final StringRedisTemplate redisTemplate;
 
-    public StockService(RedisTemplate<String, Object> redisTemplate) {
+    public StockService(StringRedisTemplate redisTemplate) {
         this.redisTemplate = redisTemplate;
     }
 
@@ -25,9 +26,10 @@ public class StockService {
 
     public boolean decrementStock(String productId, int quantity) {
         String key = "stock:" + productId;
+        // Updated script to handle Long results correctly with StringRedisTemplate
         DefaultRedisScript<Long> script = new DefaultRedisScript<>(LUA_SCRIPT, Long.class);
 
-        Long result = redisTemplate.execute(script, Collections.singletonList(key), quantity);
+        Long result = redisTemplate.execute(script, Collections.singletonList(key), String.valueOf(quantity));
 
         if (result != null && result >= 0) {
             log.info("Stock deducted successfully for product: {}. Remaining: {}", productId, result);
