@@ -21,6 +21,9 @@ public class Product {
     private String name;
 
     @Column(nullable = false)
+    private Integer stock;
+
+    @Column(nullable = false)
     private Integer stockQuantity;
 
     @Column(nullable = false, precision = 19, scale = 2)
