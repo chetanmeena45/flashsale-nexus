@@ -9,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.servlet.HandlerInterceptor;
-
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -19,7 +18,6 @@ public class RateLimitInterceptor implements HandlerInterceptor {
     private final Map<String, Bucket> cache = new ConcurrentHashMap<>();
 
     private Bucket createNewBucket() {
-        // Limit: 5 requests per minute
         return Bucket.builder()
                 .addLimit(Bandwidth.classic(5, Refill.intervally(5, Duration.ofMinutes(1))))
                 .build();
@@ -27,15 +25,19 @@ public class RateLimitInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        String token = request.getHeader("Authorization");
+        // 1. Always allow CORS pre-flight
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            return true;
+        }
 
-        // If no token, allow to pass to AuthInterceptor for proper validation
+        // 2. If no token, allow to proceed
+        String token = request.getHeader("Authorization");
         if (token == null || token.isEmpty()) {
             return true;
         }
 
+        // 3. Rate limiting logic
         Bucket bucket = cache.computeIfAbsent(token, k -> createNewBucket());
-
         if (bucket.tryConsume(1)) {
             return true;
         } else {
@@ -44,5 +46,8 @@ public class RateLimitInterceptor implements HandlerInterceptor {
             response.getWriter().write("Too Many Requests: Please slow down.");
             return false;
         }
+
+        // ADDED: This ensures the method always returns a boolean
+        // return true; // (Optional: you can also place return true here if the logic flows through)
     }
 }

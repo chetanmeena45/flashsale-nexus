@@ -21,22 +21,23 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Try to get existing ID from header, or generate a new one
+        // 1. Handle Pre-flight explicitly
+        if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // 2. Logic for standard requests
         String correlationId = request.getHeader(CORRELATION_ID_HEADER);
         if (correlationId == null || correlationId.isEmpty()) {
             correlationId = UUID.randomUUID().toString();
         }
 
         try {
-            // Put into MDC so the logging pattern in yml can pick it up
             MDC.put(MDC_CORRELATION_ID_KEY, correlationId);
-
-            // Add to response so the client knows their tracking ID
             response.setHeader(CORRELATION_ID_HEADER, correlationId);
-
             filterChain.doFilter(request, response);
         } finally {
-            // Clean up to prevent memory leaks or context contamination in threads
             MDC.remove(MDC_CORRELATION_ID_KEY);
         }
     }
